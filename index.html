@@ -420,7 +420,7 @@ button { cursor: pointer; }
       <button class="icon-btn" id="closeSettings" aria-label="Close settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     </div>
 
-    <div class="field">
+    <div class="field" id="sheetField">
       <label for="sheetUrl">Google Sheet link</label>
       <input id="sheetUrl" type="url" placeholder="https://docs.google.com/spreadsheets/d/…" autocomplete="off" spellcheck="false">
       <div class="help">
@@ -434,7 +434,7 @@ button { cursor: pointer; }
       <div class="msg" id="sheetMsg" role="status"></div>
     </div>
 
-    <div class="field">
+    <div class="field" id="formatField">
       <label>Sheet format</label>
       <div class="help">Row 1 holds headers. Only <b>Week</b>, <b>Korean</b> and <b>English</b> are required. Leave Week blank on following rows and it carries down from above. The highest week number counts as "this week".</div>
       <div class="table-x">
@@ -473,10 +473,15 @@ button { cursor: pointer; }
 <script>
 /* =====================================================================
    단어 Dash — Korean flashcards synced from a Google Sheet
-   Paste your sheet link below to hard-wire it for everyone who opens
-   this page (handy when hosting it). Otherwise set it in Settings.
+
+   MASTER SHEET LINK
+   Paste your Google Sheet link between the quotes below. Everyone who
+   opens this app will then use that sheet, and the sheet setting is
+   hidden from Settings so nobody can change it.
+   Leave it empty ("") to let each person paste their own link instead.
    ===================================================================== */
-const DEFAULT_SHEET_URL = "";
+const MASTER_SHEET_URL = "";
+const LOCKED = MASTER_SHEET_URL.trim() !== "";
 
 const SAMPLE_CSV = `Week,Korean,Romanization,English,Notes
 Week 1,안녕하세요,annyeonghaseyo,hello,Polite greeting
@@ -511,7 +516,7 @@ const store = {
 };
 const qsSheet = new URLSearchParams(location.search).get("sheet");
 let settings = Object.assign({ sheet: "", refresh: 5, tts: true, dir: "ko", src: "latest", week: "", game: "quiz", len: 20 }, store.get("settings", {}));
-if (qsSheet) settings.sheet = qsSheet;
+if (qsSheet && !LOCKED) settings.sheet = qsSheet;
 let stats = store.get("stats", {});     // id -> {box, seen, right, last}
 let profile = Object.assign({ xp: 0, streak: 0, lastDay: null, bestSpeed: 0 }, store.get("profile", {}));
 let words = [], weeks = [], source = "sample", lastSync = null, syncTimer = null;
@@ -611,7 +616,7 @@ function toCsvUrl(input) {
   } catch {}
   return s; // a direct CSV link
 }
-const activeSheet = () => settings.sheet || DEFAULT_SHEET_URL;
+const activeSheet = () => LOCKED ? MASTER_SHEET_URL.trim() : settings.sheet;
 
 /* ---------- Sync ---------- */
 function setSync(state, text) {
@@ -668,7 +673,7 @@ async function sync(manual) {
       : e.message === "empty" ? "no rows with Korean and English were found"
       : "the sheet couldn't be reached";
     if (cache && cache.sheet === activeSheet() && !words.length) { lastSync = cache.at; applyWords(toWords(cache.csv), "cache"); }
-    else if (!words.length) applyWords(toWords(SAMPLE_CSV), "sample");
+    else if (!words.length) applyWords(LOCKED ? [] : toWords(SAMPLE_CSV), LOCKED ? "error" : "sample");
     setSync("err", `Couldn't sync: ${why}.` + (source === "cache" ? ` Showing words from ${agoText(lastSync)}.` : ""));
     return { ok: false, why };
   } finally { syncing = false; }
@@ -719,7 +724,7 @@ function renderHome() {
   $("#streak").textContent = liveStreak();
   const mastered = words.filter(w => (stats[w.id]?.box || 0) >= MASTER).length;
   $("#mastered").textContent = `${mastered}/${words.length} mastered`;
-  $("#sampleNotice").hidden = source !== "sample";
+  $("#sampleNotice").hidden = LOCKED || source !== "sample";
 
   const lw = latestWeek();
   if (lw) {
@@ -732,7 +737,8 @@ function renderHome() {
     $("#srcLatestN").textContent = `${lw.count} words`;
     $("#srcAllN").textContent = `${words.length} words`;
   } else {
-    $("#weekTitle").textContent = "No words yet"; $("#weekSub").textContent = "Add rows to your sheet and they'll show up here."; $("#weekChips").innerHTML = "";
+    $("#weekTitle").textContent = source === "error" ? "Can't load words" : "No words yet";
+    $("#weekSub").textContent = source === "error" ? "Couldn't reach the class word list. Check your internet connection, then tap Sync now." : "Add rows to your sheet and they'll show up here."; $("#weekChips").innerHTML = "";
   }
   // week select
   const sel = $("#weekSelect");
@@ -1079,7 +1085,8 @@ $("#search").addEventListener("input", renderWords);
 
 /* ---------- Settings ---------- */
 function openSettings() {
-  $("#sheetUrl").value = settings.sheet || DEFAULT_SHEET_URL;
+  $("#sheetField").hidden = LOCKED; $("#formatField").hidden = LOCKED;
+  $("#sheetUrl").value = settings.sheet;
   $("#refreshSel").value = String(settings.refresh);
   $("#ttsToggle").checked = !!settings.tts;
   $("#sheetMsg").textContent = ""; $("#resetConfirm").hidden = true;
