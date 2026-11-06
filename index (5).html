@@ -1,0 +1,1142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#121530">
+<title>단어 Dash</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@600;800&display=swap">
+<style>
+/* Layout: one-column "arcade cabinet" — HUD on top, one big card in the middle, controls under the thumb. */
+:root {
+  --bg: #eef1f8;
+  --bg-2: #e3e8f4;
+  --surface: #ffffff;
+  --surface-2: #f6f8fd;
+  --ink: #161a33;
+  --ink-2: #4d5372;
+  --ink-3: #8a90ab;
+  --line: #d7dcec;
+  --jade: #0f9b80;      /* dancheong green: correct, primary */
+  --jade-ink: #ffffff;
+  --jade-soft: #d5f2ea;
+  --persimmon: #ef5a35; /* wrong / again */
+  --persimmon-soft: #fde2d9;
+  --gold: #e7a400;      /* XP, streaks */
+  --gold-soft: #fff1c7;
+  --indigo: #3b3fb8;    /* accent for selection */
+  --indigo-soft: #e2e3fb;
+  --card-glow: 0 18px 50px -22px rgba(40, 46, 110, .45);
+  --font-display: "Bagel Fat One", "IBM Plex Sans KR", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-word: "Noto Serif KR", "AppleMyungjo", "Batang", serif;
+  --r: 18px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1126; --bg-2: #151938; --surface: #1b2045; --surface-2: #222856;
+    --ink: #eef0ff; --ink-2: #b4b9de; --ink-3: #7c82ad; --line: #2e3566;
+    --jade: #36d3b2; --jade-ink: #06241e; --jade-soft: #123d3a;
+    --persimmon: #ff7a57; --persimmon-soft: #3d2030;
+    --gold: #ffc935; --gold-soft: #3a3320;
+    --indigo: #9a9dff; --indigo-soft: #2a2f6a;
+    --card-glow: 0 24px 60px -24px rgba(0, 0, 0, .8);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1126; --bg-2: #151938; --surface: #1b2045; --surface-2: #222856;
+  --ink: #eef0ff; --ink-2: #b4b9de; --ink-3: #7c82ad; --line: #2e3566;
+  --jade: #36d3b2; --jade-ink: #06241e; --jade-soft: #123d3a;
+  --persimmon: #ff7a57; --persimmon-soft: #3d2030;
+  --gold: #ffc935; --gold-soft: #3a3320;
+  --indigo: #9a9dff; --indigo-soft: #2a2f6a;
+  --card-glow: 0 24px 60px -24px rgba(0, 0, 0, .8);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body {
+  margin: 0;
+  background: radial-gradient(1200px 600px at 50% -200px, var(--bg-2), var(--bg) 70%) fixed, var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+[hidden] { display: none !important; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--indigo); outline-offset: 2px; border-radius: 10px; }
+
+.app {
+  max-width: 560px; margin: 0 auto; min-height: 100%;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px 32px;
+  display: flex; flex-direction: column; gap: 18px;
+}
+
+/* ---------- Top bar ---------- */
+.topbar { display: flex; align-items: center; gap: 10px; }
+.logo { font-family: var(--font-display); font-size: 26px; letter-spacing: .5px; line-height: 1; margin: 0; display: flex; align-items: baseline; gap: 6px; }
+.logo .ko { color: var(--jade); }
+.logo .en { color: var(--ink); }
+.tabs { margin-left: auto; display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px; }
+.tab { border: 0; background: transparent; padding: 6px 14px; border-radius: 999px; font-weight: 600; font-size: 14px; color: var(--ink-2); }
+.tab[aria-selected="true"] { background: var(--ink); color: var(--bg); }
+.icon-btn { width: 40px; height: 40px; flex: none; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; color: var(--ink-2); }
+.icon-btn:hover { color: var(--ink); }
+.icon-btn svg { width: 20px; height: 20px; }
+
+/* ---------- Player panel ---------- */
+.player { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; }
+.lvl { width: 54px; height: 54px; border-radius: 16px; background: var(--ink); color: var(--bg); display: grid; place-items: center; text-align: center; line-height: 1; }
+.lvl small { display: block; font-size: 9px; letter-spacing: 1.2px; text-transform: uppercase; opacity: .7; margin-bottom: 3px; }
+.lvl b { font-family: var(--font-display); font-size: 22px; font-weight: 400; }
+.xpwrap { min-width: 0; }
+.xpline { display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.xpline b { color: var(--ink); }
+.bar { height: 10px; border-radius: 999px; background: var(--bg-2); overflow: hidden; margin-top: 6px; }
+.bar > i { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--gold), #ff9f1c); transition: width .6s cubic-bezier(.2,.8,.2,1); }
+.streak { display: flex; flex-direction: column; align-items: center; color: var(--gold); line-height: 1; gap: 2px; }
+.streak svg { width: 24px; height: 24px; }
+.streak b { font-family: var(--font-display); font-weight: 400; font-size: 18px; color: var(--ink); }
+.streak small { font-size: 10px; color: var(--ink-3); letter-spacing: .8px; text-transform: uppercase; }
+
+/* ---------- This week banner ---------- */
+.week { position: relative; overflow: hidden; border-radius: var(--r); padding: 18px; background: var(--ink); color: var(--bg); display: grid; gap: 4px; }
+.week::after { content: "새"; position: absolute; right: -6px; bottom: -40px; font-family: var(--font-word); font-weight: 800; font-size: 150px; line-height: 1; opacity: .09; pointer-events: none; }
+.eyebrow { font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; font-weight: 600; opacity: .75; }
+.week h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 28px; line-height: 1.1; text-wrap: balance; }
+.week p { margin: 0; font-size: 14px; opacity: .85; }
+.week .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; position: relative; z-index: 1; }
+.week .chip { font-family: var(--font-word); font-weight: 600; font-size: 14px; padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--bg) 14%, transparent); }
+
+/* ---------- Options ---------- */
+.section { display: grid; gap: 8px; }
+.label { font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 700; color: var(--ink-3); }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 4px; }
+.seg button { border: 0; background: transparent; border-radius: 10px; padding: 9px 6px; font-weight: 600; font-size: 14px; color: var(--ink-2); line-height: 1.2; }
+.seg button small { display: block; font-weight: 400; font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+.seg button[aria-pressed="true"] { background: var(--indigo-soft); color: var(--indigo); }
+.seg button[aria-pressed="true"] small { color: var(--indigo); opacity: .8; }
+
+.games { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.game { border: 1.5px solid var(--line); background: var(--surface); border-radius: 16px; padding: 12px 10px; text-align: left; display: grid; gap: 6px; transition: transform .15s, border-color .15s; }
+.game:hover { transform: translateY(-2px); }
+.game svg { width: 26px; height: 26px; color: var(--ink-2); }
+.game b { font-size: 15px; }
+.game span { font-size: 12px; color: var(--ink-3); line-height: 1.3; }
+.game[aria-pressed="true"] { border-color: var(--indigo); background: var(--indigo-soft); }
+.game[aria-pressed="true"] svg { color: var(--indigo); }
+
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.weekpick { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); }
+.weekpick select { flex: 1; min-width: 0; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); }
+
+.start { border: 0; border-radius: 18px; padding: 18px; background: var(--jade); color: var(--jade-ink); font-family: var(--font-display); font-size: 22px; letter-spacing: .5px; box-shadow: 0 6px 0 color-mix(in srgb, var(--jade) 60%, #000); transition: transform .08s, box-shadow .08s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.start:active { transform: translateY(4px); box-shadow: 0 2px 0 color-mix(in srgb, var(--jade) 60%, #000); }
+.start small { font-family: var(--font-body); font-size: 13px; font-weight: 600; opacity: .8; }
+.start:disabled { opacity: .5; cursor: not-allowed; }
+
+.sync { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-3); justify-content: center; text-align: center; flex-wrap: wrap; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); flex: none; }
+.dot.ok { background: var(--jade); box-shadow: 0 0 0 3px var(--jade-soft); }
+.dot.warn { background: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft); }
+.dot.err { background: var(--persimmon); box-shadow: 0 0 0 3px var(--persimmon-soft); }
+.dot.spin { animation: pulse 1s infinite; }
+@keyframes pulse { 50% { opacity: .3; } }
+.linkbtn { border: 0; background: none; padding: 0; color: var(--indigo); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; font-size: inherit; }
+.notice { border: 1px dashed var(--gold); background: var(--gold-soft); color: var(--ink); border-radius: 14px; padding: 12px 14px; font-size: 13.5px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+
+/* ---------- Play ---------- */
+.hud { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
+.hud .bar { margin: 0; height: 12px; }
+.hud .bar > i { background: linear-gradient(90deg, var(--jade), color-mix(in srgb, var(--jade) 60%, var(--indigo))); }
+.hudstats { display: flex; gap: 10px; align-items: center; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 14px; }
+.combo { color: var(--gold); display: flex; align-items: center; gap: 3px; transition: transform .2s; }
+.combo svg { width: 16px; height: 16px; }
+.combo.bump { transform: scale(1.35); }
+.timer { font-family: var(--font-display); font-weight: 400; font-size: 20px; min-width: 38px; text-align: right; }
+.timer.low { color: var(--persimmon); }
+
+.stage { position: relative; perspective: 1400px; min-height: 340px; display: grid; }
+.card { position: relative; width: 100%; min-height: 340px; transform-style: preserve-3d; transition: transform .5s cubic-bezier(.3,1.3,.5,1); cursor: pointer; touch-action: pan-y; user-select: none; }
+.card.flipped { transform: rotateY(180deg); }
+.face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 24px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--card-glow); padding: 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; overflow: hidden; }
+.face.back { transform: rotateY(180deg); background: var(--surface-2); }
+.face .tag { position: absolute; top: 16px; left: 18px; font-size: 11px; letter-spacing: 1.3px; text-transform: uppercase; font-weight: 700; color: var(--ink-3); }
+.face .new { position: absolute; top: 14px; right: 16px; font-size: 11px; font-weight: 700; color: var(--jade); background: var(--jade-soft); padding: 3px 9px; border-radius: 999px; letter-spacing: .6px; }
+.word { font-family: var(--font-word); font-weight: 800; font-size: clamp(38px, 11vw, 64px); line-height: 1.15; margin: 0; overflow-wrap: anywhere; text-wrap: balance; }
+.word.en { font-family: var(--font-body); font-weight: 700; font-size: clamp(28px, 8vw, 44px); }
+.rom { color: var(--ink-3); font-size: 15px; letter-spacing: .4px; }
+.note { color: var(--ink-2); font-size: 14px; max-width: 36ch; }
+.hint { position: absolute; bottom: 16px; font-size: 12px; color: var(--ink-3); }
+.speak { border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); border-radius: 999px; padding: 6px 12px; display: inline-flex; gap: 6px; align-items: center; font-size: 13px; font-weight: 600; }
+.speak svg { width: 16px; height: 16px; }
+
+.card.drag { transition: none; }
+.swipe-badge { position: absolute; top: 18px; font-family: var(--font-display); font-size: 22px; padding: 4px 12px; border-radius: 10px; border: 3px solid; opacity: 0; pointer-events: none; z-index: 3; }
+.swipe-badge.yes { right: 18px; color: var(--jade); transform: rotate(8deg); }
+.swipe-badge.no { left: 18px; color: var(--persimmon); transform: rotate(-8deg); }
+
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.act { border: 0; border-radius: 16px; padding: 15px 10px; font-weight: 700; font-size: 16px; display: flex; flex-direction: column; align-items: center; gap: 2px; transition: transform .08s; }
+.act:active { transform: scale(.97); }
+.act small { font-weight: 500; font-size: 11px; opacity: .75; }
+.act.no { background: var(--persimmon-soft); color: var(--persimmon); }
+.act.yes { background: var(--jade-soft); color: var(--jade); }
+.act.flip { grid-column: 1 / -1; background: var(--ink); color: var(--bg); }
+
+.prompt { background: var(--surface); border: 1px solid var(--line); border-radius: 24px; box-shadow: var(--card-glow); padding: 30px 20px 26px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; position: relative; min-height: 200px; justify-content: center; }
+.prompt.shake { animation: shake .4s; }
+@keyframes shake { 20%,60% { transform: translateX(-8px); } 40%,80% { transform: translateX(8px); } }
+.options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.opt { border: 1.5px solid var(--line); background: var(--surface); border-radius: 16px; padding: 14px 12px; min-height: 68px; font-weight: 600; font-size: 16px; text-align: left; display: flex; align-items: center; gap: 10px; transition: transform .1s, background .15s, border-color .15s; overflow-wrap: anywhere; }
+.opt:hover:not(:disabled) { border-color: var(--indigo); }
+.opt .k { flex: none; width: 24px; height: 24px; border-radius: 7px; background: var(--bg-2); color: var(--ink-3); font-size: 12px; display: grid; place-items: center; font-weight: 700; }
+.opt.ko-opt { font-family: var(--font-word); font-size: 19px; }
+.opt.right { background: var(--jade-soft); border-color: var(--jade); color: var(--jade); }
+.opt.wrong { background: var(--persimmon-soft); border-color: var(--persimmon); color: var(--persimmon); }
+.opt:disabled { cursor: default; }
+.opt:disabled:not(.right):not(.wrong) { opacity: .5; }
+.next { border: 0; border-radius: 16px; padding: 15px; background: var(--ink); color: var(--bg); font-weight: 700; font-size: 16px; }
+
+.float-xp { position: fixed; left: 50%; top: 40%; transform: translate(-50%, 0); font-family: var(--font-display); font-size: 28px; color: var(--gold); pointer-events: none; animation: rise .9s ease-out forwards; z-index: 50; text-shadow: 0 2px 0 rgba(0,0,0,.15); }
+@keyframes rise { to { transform: translate(-50%, -70px); opacity: 0; } }
+
+/* ---------- Results ---------- */
+.results { text-align: center; display: grid; gap: 18px; }
+.stars { display: flex; justify-content: center; gap: 6px; }
+.stars svg { width: 56px; height: 56px; color: var(--line); }
+.stars svg.on { color: var(--gold); animation: pop .5s backwards; }
+.stars svg:nth-child(2).on { animation-delay: .15s; }
+.stars svg:nth-child(3).on { animation-delay: .3s; }
+@keyframes pop { from { transform: scale(0) rotate(-40deg); } 70% { transform: scale(1.2); } }
+.results h2 { font-family: var(--font-display); font-weight: 400; font-size: 32px; margin: 0; }
+.statgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 8px; }
+.stat b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 26px; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+.missed { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 6px 14px; }
+.missed h3 { font-size: 12px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink-3); margin: 10px 0 4px; }
+.btnrow { display: grid; gap: 10px; }
+.ghost { border: 1px solid var(--line); background: var(--surface); border-radius: 16px; padding: 14px; font-weight: 700; }
+
+/* ---------- Word list ---------- */
+.search { width: 100%; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); }
+.wgroup { display: grid; gap: 6px; }
+.wgroup h3 { margin: 6px 2px 0; display: flex; justify-content: space-between; align-items: baseline; font-size: 15px; }
+.wgroup h3 small { color: var(--ink-3); font-weight: 500; font-size: 12px; }
+.wlist { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.witem { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding: 10px 14px; border-top: 1px solid var(--line); }
+.witem:first-child { border-top: 0; }
+.witem .k { font-family: var(--font-word); font-weight: 700; font-size: 19px; min-width: 0; overflow-wrap: anywhere; }
+.witem .k small { font-family: var(--font-body); font-weight: 400; font-size: 12px; color: var(--ink-3); margin-left: 6px; }
+.witem .e { color: var(--ink-2); font-size: 14px; min-width: 0; overflow-wrap: anywhere; }
+.witem .right { grid-row: 1 / span 2; grid-column: 2; display: flex; align-items: center; gap: 10px; }
+.mastery { display: flex; gap: 3px; }
+.mastery i { width: 7px; height: 7px; border-radius: 2px; background: var(--line); }
+.mastery i.on { background: var(--jade); }
+.mini { border: 0; background: transparent; color: var(--ink-3); padding: 4px; border-radius: 8px; display: grid; }
+.mini svg { width: 18px; height: 18px; }
+.empty { text-align: center; color: var(--ink-3); padding: 30px 10px; }
+
+/* ---------- Settings sheet ---------- */
+.scrim { position: fixed; inset: 0; background: rgba(8, 10, 28, .55); z-index: 40; display: flex; align-items: flex-end; justify-content: center; }
+.sheet { background: var(--surface); color: var(--ink); width: 100%; max-width: 560px; max-height: 92%; overflow: auto; border-radius: 24px 24px 0 0; padding: 20px max(18px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px)); display: grid; gap: 16px; animation: up .25s ease-out; }
+@keyframes up { from { transform: translateY(40px); opacity: 0; } }
+.sheet h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 24px; }
+.field { display: grid; gap: 6px; }
+.field label { font-weight: 600; font-size: 14px; }
+.field input[type="url"], .field input[type="text"], .field select { width: 100%; padding: 11px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); }
+.help { font-size: 13px; color: var(--ink-2); }
+.help ol { margin: 4px 0 0; padding-left: 20px; display: grid; gap: 3px; }
+.help code { font-size: 12px; background: var(--bg-2); padding: 1px 5px; border-radius: 5px; }
+.table-x { overflow-x: auto; }
+.fmt { border-collapse: collapse; font-size: 12.5px; white-space: nowrap; }
+.fmt th, .fmt td { border: 1px solid var(--line); padding: 4px 8px; text-align: left; }
+.fmt th { background: var(--bg-2); }
+.toggle { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-weight: 600; font-size: 14px; }
+.toggle input { width: 20px; height: 20px; accent-color: var(--jade); }
+.primary { border: 0; border-radius: 14px; padding: 13px; background: var(--jade); color: var(--jade-ink); font-weight: 700; font-size: 15px; }
+.danger { border: 1px solid var(--persimmon); color: var(--persimmon); background: transparent; border-radius: 14px; padding: 11px; font-weight: 600; }
+.msg { font-size: 13px; }
+.msg.err { color: var(--persimmon); }
+.msg.ok { color: var(--jade); }
+
+/* ---------- Toast ---------- */
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 12px 18px; border-radius: 14px; font-weight: 600; font-size: 14px; z-index: 60; box-shadow: 0 10px 30px -10px rgba(0,0,0,.4); max-width: calc(100% - 32px); animation: up .25s ease-out; }
+
+#confetti { position: fixed; inset: 0; pointer-events: none; z-index: 55; width: 100%; height: 100%; }
+
+@media (max-width: 420px) {
+  .games { gap: 6px; }
+  .game { padding: 10px 8px; }
+  .game span { display: none; }
+  .row2 { grid-template-columns: 1fr; }
+  .options { grid-template-columns: 1fr; }
+  .opt { min-height: 56px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="topbar">
+    <h1 class="logo"><span class="ko">단어</span><span class="en">Dash</span></h1>
+    <nav class="tabs" role="tablist" id="tabs">
+      <button class="tab" role="tab" data-view="home" aria-selected="true">Play</button>
+      <button class="tab" role="tab" data-view="words" aria-selected="false">Words</button>
+    </nav>
+    <button class="icon-btn" id="openSettings" aria-label="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
+  </header>
+
+  <!-- HOME -->
+  <main id="view-home" class="section" style="gap:18px">
+    <div class="notice" id="sampleNotice" hidden>
+      <span>You're playing with <b>sample words</b>. Connect your Google Sheet to use your class list.</span>
+      <button class="linkbtn" data-open-settings>Connect sheet</button>
+    </div>
+
+    <section class="player" aria-label="Your progress">
+      <div class="lvl"><div><small>Level</small><b id="lvl">1</b></div></div>
+      <div class="xpwrap">
+        <div class="xpline"><span><b id="xpNow">0</b> / <span id="xpNeed">100</span> XP</span><span id="mastered">0 mastered</span></div>
+        <div class="bar"><i id="xpBar"></i></div>
+      </div>
+      <div class="streak" title="Daily streak">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 3.5 5 6 5 11a5 5 0 0 1-10 0c0-2 .8-3.4 2-4.5 0 1.6.7 2.7 1.8 3.2C10.4 9 11 5 12 2z"/></svg>
+        <b id="streak">0</b><small>days</small>
+      </div>
+    </section>
+
+    <section class="week" aria-live="polite">
+      <span class="eyebrow" id="weekEyebrow">This week's class</span>
+      <h2 id="weekTitle">Loading words…</h2>
+      <p id="weekSub"></p>
+      <div class="chips" id="weekChips"></div>
+    </section>
+
+    <div class="section">
+      <span class="label" id="srcLabel">What to study</span>
+      <div class="seg" id="srcSeg" role="group" aria-labelledby="srcLabel">
+        <button data-src="latest">This week<small id="srcLatestN">new words</small></button>
+        <button data-src="mix">New + review<small>mixed with past</small></button>
+        <button data-src="all">Everything<small id="srcAllN">all words</small></button>
+      </div>
+      <div class="weekpick">
+        <label for="weekSelect">Or pick a week</label>
+        <select id="weekSelect"></select>
+      </div>
+    </div>
+
+    <div class="section">
+      <span class="label">Game</span>
+      <div class="games" id="gameSeg">
+        <button class="game" data-game="flip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="5" width="13" height="16" rx="2"/><path d="M8 3h11a2 2 0 0 1 2 2v13"/></svg>
+          <b>Flip</b><span>Tap to reveal, swipe to grade</span>
+        </button>
+        <button class="game" data-game="quiz">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><path d="m14 17 2 2 4-4"/></svg>
+          <b>Quiz</b><span>Pick from 4, build combos</span>
+        </button>
+        <button class="game" data-game="speed">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
+          <b>Speed</b><span>60 seconds, beat your best</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="section">
+        <span class="label">Show first</span>
+        <div class="seg" id="dirSeg">
+          <button data-dir="ko">한국어</button>
+          <button data-dir="en">English</button>
+          <button data-dir="mixed">Both</button>
+        </div>
+      </div>
+      <div class="section" id="lenWrap">
+        <span class="label">Cards</span>
+        <div class="seg" id="lenSeg">
+          <button data-len="10">10</button>
+          <button data-len="20">20</button>
+          <button data-len="0">All</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="start" id="startBtn">Start <small id="startSub"></small></button>
+
+    <div class="sync" id="syncLine"><span class="dot" id="syncDot"></span><span id="syncText">Not synced yet</span> · <button class="linkbtn" id="syncNow">Sync now</button></div>
+  </main>
+
+  <!-- PLAY -->
+  <main id="view-play" class="section" style="gap:18px" hidden>
+    <div class="hud">
+      <button class="icon-btn" id="quitBtn" aria-label="End round">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+      <div class="bar"><i id="progBar"></i></div>
+      <div class="hudstats">
+        <span class="combo" id="combo" title="Combo"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span id="comboN">0</span></span>
+        <span id="progText">0/0</span>
+        <span class="timer" id="timer" hidden>60</span>
+      </div>
+    </div>
+    <div id="playArea" class="section" style="gap:14px"></div>
+  </main>
+
+  <!-- RESULTS -->
+  <main id="view-results" class="results" hidden></main>
+
+  <!-- WORDS -->
+  <main id="view-words" class="section" style="gap:14px" hidden>
+    <label class="label" for="search">Every word so far</label>
+    <input class="search" id="search" type="search" placeholder="Search Korean or English…" autocomplete="off">
+    <div id="wordGroups" class="section" style="gap:16px"></div>
+  </main>
+</div>
+
+<!-- SETTINGS -->
+<div class="scrim" id="settings" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h2 id="setTitle">Settings</h2>
+      <button class="icon-btn" id="closeSettings" aria-label="Close settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+
+    <div class="field">
+      <label for="sheetUrl">Google Sheet link</label>
+      <input id="sheetUrl" type="url" placeholder="https://docs.google.com/spreadsheets/d/…" autocomplete="off" spellcheck="false">
+      <div class="help">
+        <ol>
+          <li>In your sheet, click <b>Share</b> → General access → <b>Anyone with the link</b> (Viewer). Or use <b>File → Share → Publish to web</b>.</li>
+          <li>Copy the link from the address bar (or the published link) and paste it here.</li>
+          <li>To use a specific tab, open that tab first so the link ends in <code>#gid=…</code>.</li>
+        </ol>
+      </div>
+      <button class="primary" id="saveSheet">Save &amp; sync</button>
+      <div class="msg" id="sheetMsg" role="status"></div>
+    </div>
+
+    <div class="field">
+      <label>Sheet format</label>
+      <div class="help">Row 1 holds headers. Only <b>Week</b>, <b>Korean</b> and <b>English</b> are required. Leave Week blank on following rows and it carries down from above. The highest week number counts as "this week".</div>
+      <div class="table-x">
+        <table class="fmt">
+          <tr><th>Week</th><th>Korean</th><th>Romanization</th><th>English</th><th>Notes</th></tr>
+          <tr><td>Week 3</td><td>날씨</td><td>nalssi</td><td>weather</td><td>날씨가 좋아요</td></tr>
+          <tr><td></td><td>비</td><td>bi</td><td>rain</td><td></td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="refreshSel">Check for new words</label>
+      <select id="refreshSel">
+        <option value="1">Every minute</option>
+        <option value="5">Every 5 minutes</option>
+        <option value="15">Every 15 minutes</option>
+        <option value="0">Only when I open the app</option>
+      </select>
+    </div>
+
+    <label class="toggle" for="ttsToggle">Read Korean words aloud <input type="checkbox" id="ttsToggle"></label>
+
+    <div class="field">
+      <button class="danger" id="resetBtn">Reset my progress</button>
+      <div id="resetConfirm" hidden class="notice" style="border-color:var(--persimmon);background:var(--persimmon-soft)">
+        <span>Clear XP, streak and word mastery on this device?</span>
+        <span style="display:flex;gap:12px"><button class="linkbtn" id="resetYes" style="color:var(--persimmon)">Yes, reset</button><button class="linkbtn" id="resetNo">Cancel</button></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<canvas id="confetti" hidden></canvas>
+
+<script>
+/* =====================================================================
+   단어 Dash — Korean flashcards synced from a Google Sheet
+   Paste your sheet link below to hard-wire it for everyone who opens
+   this page (handy when hosting it). Otherwise set it in Settings.
+   ===================================================================== */
+const DEFAULT_SHEET_URL = "";
+
+const SAMPLE_CSV = `Week,Korean,Romanization,English,Notes
+Week 1,안녕하세요,annyeonghaseyo,hello,Polite greeting
+Week 1,감사합니다,gamsahamnida,thank you,Formal
+Week 1,네,ne,yes,
+Week 1,아니요,aniyo,no,
+Week 1,이름,ireum,name,이름이 뭐예요? = What is your name?
+Week 1,학생,haksaeng,student,
+Week 1,선생님,seonsaengnim,teacher,
+Week 1,친구,chingu,friend,
+Week 2,먹다,meokda,to eat,먹어요 (polite present)
+Week 2,마시다,masida,to drink,마셔요
+Week 2,가다,gada,to go,가요
+Week 2,학교,hakgyo,school,
+Week 2,집,jip,house / home,
+Week 2,커피,keopi,coffee,
+Week 2,오늘,oneul,today,
+Week 3,어제,eoje,yesterday,
+Week 3,내일,naeil,tomorrow,
+Week 3,날씨,nalssi,weather,날씨가 좋아요 = The weather is nice
+Week 3,덥다,deopda,to be hot (weather),더워요
+Week 3,춥다,chupda,to be cold (weather),추워요
+Week 3,비,bi,rain,비가 와요 = It's raining
+Week 3,주말,jumal,weekend,
+Week 3,좋아하다,joahada,to like,좋아해요
+Week 3,배우다,baeuda,to learn,한국어를 배워요`;
+
+/* ---------- storage (safe) ---------- */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("wd:" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("wd:" + k, JSON.stringify(v)); } catch {} }
+};
+const qsSheet = new URLSearchParams(location.search).get("sheet");
+let settings = Object.assign({ sheet: "", refresh: 5, tts: true, dir: "ko", src: "latest", week: "", game: "quiz", len: 20 }, store.get("settings", {}));
+if (qsSheet) settings.sheet = qsSheet;
+let stats = store.get("stats", {});     // id -> {box, seen, right, last}
+let profile = Object.assign({ xp: 0, streak: 0, lastDay: null, bestSpeed: 0 }, store.get("profile", {}));
+let words = [], weeks = [], source = "sample", lastSync = null, syncTimer = null;
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const saveSettings = () => store.set("settings", settings);
+
+/* ---------- CSV ---------- */
+function parseCSV(text) {
+  const rows = []; let row = [], f = "", q = false;
+  text = text.replace(/^﻿/, "");
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; }
+      else f += c;
+    } else if (c === '"') q = true;
+    else if (c === ",") { row.push(f); f = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      row.push(f); rows.push(row); row = []; f = "";
+    } else f += c;
+  }
+  if (f !== "" || row.length) { row.push(f); rows.push(row); }
+  return rows.filter(r => r.some(c => c.trim() !== ""));
+}
+
+const hasHangul = s => /[가-힣ᄀ-ᇿ㄰-㆏]/.test(s);
+function toWords(csv) {
+  const rows = parseCSV(csv);
+  if (!rows.length) return [];
+  const head = rows[0].map(h => h.trim().toLowerCase());
+  const find = (...keys) => head.findIndex(h => keys.some(k => h === k || h.includes(k)));
+  let col = {
+    week: find("week", "lesson", "class", "주", "date"),
+    ko: find("korean", "hangul", "한국어", "한글", "단어", "word"),
+    en: find("english", "meaning", "translation", "영어", "뜻", "definition"),
+    rom: find("romaniz", "pronunc", "romaji", "발음"),
+    notes: find("note", "example", "sentence", "예문", "memo", "comment")
+  };
+  let body = rows.slice(1);
+  if (col.ko < 0 || col.en < 0) {
+    // No recognisable header: assume Week, Korean, English, Romanization, Notes
+    col = { week: 0, ko: 1, en: 2, rom: 3, notes: 4 };
+    if (!hasHangul(rows[0].join(""))) body = rows.slice(1); else body = rows;
+  }
+  const out = []; let curWeek = "Week 1"; const seen = new Set();
+  for (const r of body) {
+    const g = i => (i >= 0 && r[i] != null ? r[i].trim() : "");
+    let wk = g(col.week); if (/^\d+$/.test(wk)) wk = "Week " + wk; if (wk) curWeek = wk;
+    let ko = g(col.ko), en = g(col.en), notes = g(col.notes);
+    if (!ko || !en) continue;
+    // "heel; e.g. 굽이 높아요" → keep the meaning short, move the example to notes
+    const eg = en.match(/^(.*?)[;,]?\s*\(?\b(?:e\.g\.|ex\.|예:)\s*(.+?)\)?$/i);
+    if (eg && eg[1].trim()) { en = eg[1].trim(); notes = notes ? notes + " · " + eg[2] : eg[2]; }
+    const id = ko + "|" + en;
+    if (seen.has(id)) continue; seen.add(id);
+    out.push({ id, week: curWeek, ko, en, rom: g(col.rom), notes });
+  }
+  return out;
+}
+
+function buildWeeks(list) {
+  const map = new Map();
+  list.forEach((w, i) => { if (!map.has(w.week)) map.set(w.week, { label: w.week, first: i, count: 0 }); map.get(w.week).count++; });
+  const arr = [...map.values()];
+  arr.forEach(w => {
+    const s = w.label;
+    const isDate = /\d{1,4}[-/.]\d{1,2}([-/.]\d{1,4})?/.test(s) && !isNaN(Date.parse(s.replace(/\./g, "/")));
+    const num = s.match(/\d+(\.\d+)?/);
+    w.rank = isDate ? Date.parse(s.replace(/\./g, "/")) : num ? parseFloat(num[0]) : 1e15 + w.first;
+  });
+  arr.sort((a, b) => a.rank - b.rank || a.first - b.first);
+  return arr;
+}
+
+/* ---------- Sheet URL → CSV URL ---------- */
+function toCsvUrl(input) {
+  const s = (input || "").trim();
+  if (!s) return "";
+  try {
+    if (/\/spreadsheets\/d\/e\//.test(s)) {           // Published to web
+      const u = new URL(s);
+      u.pathname = u.pathname.replace(/\/pubhtml$/, "/pub");
+      const hash = s.match(/gid=(\d+)/); if (hash && !u.searchParams.get("gid")) u.searchParams.set("gid", hash[1]);
+      u.searchParams.set("output", "csv");
+      return u.toString();
+    }
+    const m = s.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    if (m) {
+      const gid = (s.match(/[#&?]gid=(\d+)/) || [])[1];
+      return `https://docs.google.com/spreadsheets/d/${m[1]}/gviz/tq?tqx=out:csv&headers=1${gid ? "&gid=" + gid : ""}`;
+    }
+  } catch {}
+  return s; // a direct CSV link
+}
+const activeSheet = () => settings.sheet || DEFAULT_SHEET_URL;
+
+/* ---------- Sync ---------- */
+function setSync(state, text) {
+  const d = $("#syncDot"); d.className = "dot " + state; $("#syncText").textContent = text;
+}
+function agoText(t) {
+  if (!t) return "";
+  const s = Math.round((Date.now() - t) / 1000);
+  if (s < 45) return "just now";
+  const m = Math.round(s / 60); if (m < 60) return m + " min ago";
+  const h = Math.round(m / 60); if (h < 24) return h + " h ago";
+  return new Date(t).toLocaleDateString();
+}
+function applyWords(list, fromSource) {
+  const prev = new Set(store.get("knownIds", []));
+  const hadPrev = prev.size > 0 && fromSource === "sheet" && store.get("knownSource", "") === activeSheet();
+  words = list; weeks = buildWeeks(list); source = fromSource;
+  if (fromSource === "sheet") {
+    const fresh = list.filter(w => !prev.has(w.id));
+    if (hadPrev && fresh.length) {
+      const wk = fresh[fresh.length - 1].week;
+      toast(`${fresh.length} new word${fresh.length > 1 ? "s" : ""} added · ${wk}`);
+    }
+    store.set("knownIds", list.map(w => w.id)); store.set("knownSource", activeSheet());
+  }
+  renderHome(); if (!$("#view-words").hidden) renderWords();
+}
+let syncing = false;
+async function sync(manual) {
+  const url = toCsvUrl(activeSheet());
+  if (!url) {
+    applyWords(toWords(SAMPLE_CSV), "sample");
+    setSync("warn", "Using sample words");
+    return { ok: true };
+  }
+  if (syncing) return; syncing = true;
+  setSync("spin warn", "Syncing with your sheet…");
+  try {
+    const res = await fetch(url + (url.includes("?") ? "&" : "?") + "_=" + Date.now(), { cache: "no-store" });
+    if (!res.ok) throw new Error("http " + res.status);
+    const text = await res.text();
+    if (/^\s*<(!doctype|html)/i.test(text)) throw new Error("not-public");
+    const list = toWords(text);
+    if (!list.length) throw new Error("empty");
+    store.set("cache", { csv: text, at: Date.now(), sheet: activeSheet() });
+    lastSync = Date.now();
+    applyWords(list, "sheet");
+    setSync("ok", `Synced ${agoText(lastSync)} · ${list.length} words · ${weeks.length} week${weeks.length > 1 ? "s" : ""}`);
+    if (manual) toast("Up to date");
+    return { ok: true, count: list.length };
+  } catch (e) {
+    const cache = store.get("cache", null);
+    const why = e.message === "not-public" ? "the sheet isn't shared publicly"
+      : e.message === "empty" ? "no rows with Korean and English were found"
+      : "the sheet couldn't be reached";
+    if (cache && cache.sheet === activeSheet() && !words.length) { lastSync = cache.at; applyWords(toWords(cache.csv), "cache"); }
+    else if (!words.length) applyWords(toWords(SAMPLE_CSV), "sample");
+    setSync("err", `Couldn't sync: ${why}.` + (source === "cache" ? ` Showing words from ${agoText(lastSync)}.` : ""));
+    return { ok: false, why };
+  } finally { syncing = false; }
+}
+function scheduleSync() {
+  clearInterval(syncTimer);
+  if (settings.refresh > 0 && activeSheet()) syncTimer = setInterval(() => { if (!document.hidden) sync(); }, settings.refresh * 60000);
+}
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && activeSheet() && (!lastSync || Date.now() - lastSync > 60000)) sync();
+});
+setInterval(() => { if (lastSync && source === "sheet" && $("#syncDot").classList.contains("ok")) setSync("ok", `Synced ${agoText(lastSync)} · ${words.length} words · ${weeks.length} week${weeks.length > 1 ? "s" : ""}`); }, 30000);
+
+/* ---------- Progress ---------- */
+const st = id => stats[id] || (stats[id] = { box: 0, seen: 0, right: 0, last: 0 });
+const MASTER = 4;
+function levelInfo(xp) {
+  let lvl = 1, need = 100, base = 0;
+  while (xp >= base + need) { base += need; lvl++; need = 100 + (lvl - 1) * 50; }
+  return { lvl, now: xp - base, need };
+}
+function todayKey(d = new Date()) { return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
+function bumpStreak() {
+  const t = todayKey(), y = todayKey(new Date(Date.now() - 864e5));
+  if (profile.lastDay === t) return;
+  profile.streak = profile.lastDay === y ? profile.streak + 1 : 1;
+  profile.lastDay = t;
+}
+function liveStreak() {
+  const t = todayKey(), y = todayKey(new Date(Date.now() - 864e5));
+  return profile.lastDay === t || profile.lastDay === y ? profile.streak : 0;
+}
+function persist() { store.set("stats", stats); store.set("profile", profile); }
+
+/* ---------- Home ---------- */
+const latestWeek = () => weeks[weeks.length - 1];
+function poolFor(src) {
+  const lw = latestWeek(); if (!lw) return [];
+  if (src === "latest") return words.filter(w => w.week === lw.label);
+  if (src === "week") return words.filter(w => w.week === settings.week);
+  return words;
+}
+function renderHome() {
+  const li = levelInfo(profile.xp);
+  $("#lvl").textContent = li.lvl;
+  $("#xpNow").textContent = li.now; $("#xpNeed").textContent = li.need;
+  $("#xpBar").style.width = Math.min(100, li.now / li.need * 100) + "%";
+  $("#streak").textContent = liveStreak();
+  const mastered = words.filter(w => (stats[w.id]?.box || 0) >= MASTER).length;
+  $("#mastered").textContent = `${mastered}/${words.length} mastered`;
+  $("#sampleNotice").hidden = source !== "sample";
+
+  const lw = latestWeek();
+  if (lw) {
+    const lwWords = words.filter(w => w.week === lw.label);
+    const learned = lwWords.filter(w => (stats[w.id]?.box || 0) >= MASTER).length;
+    $("#weekEyebrow").textContent = source === "sample" ? "Sample · latest week" : "Latest from class";
+    $("#weekTitle").textContent = lw.label;
+    $("#weekSub").textContent = `${lw.count} new word${lw.count > 1 ? "s" : ""} · ${learned} mastered · ${words.length} words across ${weeks.length} week${weeks.length > 1 ? "s" : ""}`;
+    $("#weekChips").innerHTML = lwWords.slice(0, 8).map(w => `<span class="chip">${esc(w.ko)}</span>`).join("") + (lwWords.length > 8 ? `<span class="chip">+${lwWords.length - 8}</span>` : "");
+    $("#srcLatestN").textContent = `${lw.count} words`;
+    $("#srcAllN").textContent = `${words.length} words`;
+  } else {
+    $("#weekTitle").textContent = "No words yet"; $("#weekSub").textContent = "Add rows to your sheet and they'll show up here."; $("#weekChips").innerHTML = "";
+  }
+  // week select
+  const sel = $("#weekSelect");
+  sel.innerHTML = `<option value="">—</option>` + [...weeks].reverse().map(w => `<option value="${esc(w.label)}">${esc(w.label)} (${w.count})</option>`).join("");
+  if (settings.src === "week" && !weeks.some(w => w.label === settings.week)) settings.src = "latest";
+  sel.value = settings.src === "week" ? settings.week : "";
+
+  $$("#srcSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.src === settings.src));
+  $$("#gameSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.game === settings.game));
+  $$("#dirSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.dir === settings.dir));
+  $$("#lenSeg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.len) === String(settings.len)));
+  $("#lenWrap").style.opacity = settings.game === "speed" ? .4 : 1;
+
+  const n = settings.game === "speed" ? null : deckSize();
+  const srcName = { latest: "this week", mix: "new + review", all: "everything", week: settings.week }[settings.src];
+  $("#startSub").textContent = settings.game === "speed" ? `60s · ${srcName}` + (profile.bestSpeed ? ` · best ${profile.bestSpeed}` : "") : `${n} cards · ${srcName}`;
+  $("#startBtn").disabled = !words.length;
+}
+function deckSize() {
+  const len = +settings.len;
+  const p = settings.src === "mix" ? words : poolFor(settings.src);
+  return len ? Math.min(len, p.length) : p.length;
+}
+
+$("#srcSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; settings.src = b.dataset.src; saveSettings(); renderHome(); });
+$("#weekSelect").addEventListener("change", e => { if (e.target.value) { settings.src = "week"; settings.week = e.target.value; } else settings.src = "latest"; saveSettings(); renderHome(); });
+$("#gameSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; settings.game = b.dataset.game; saveSettings(); renderHome(); });
+$("#dirSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; settings.dir = b.dataset.dir; saveSettings(); renderHome(); });
+$("#lenSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; settings.len = +b.dataset.len; saveSettings(); renderHome(); });
+$("#syncNow").addEventListener("click", () => sync(true));
+
+/* ---------- Views ---------- */
+function show(view) {
+  ["home", "play", "results", "words"].forEach(v => $("#view-" + v).hidden = v !== view);
+  $("#tabs").hidden = view === "play";
+  $$("#tabs .tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === view));
+  window.scrollTo(0, 0);
+}
+$("#tabs").addEventListener("click", e => { const t = e.target.closest(".tab"); if (!t) return; if (t.dataset.view === "words") renderWords(); else renderHome(); show(t.dataset.view); });
+
+/* ---------- Deck building ---------- */
+function weakSort(list) {
+  return list.map(w => ({ w, k: (stats[w.id]?.box || 0) + Math.random() * 1.5 })).sort((a, b) => a.k - b.k).map(x => x.w);
+}
+function buildDeck() {
+  const len = +settings.len;
+  const lw = latestWeek();
+  if (settings.src === "mix") {
+    const fresh = words.filter(w => w.week === lw.label);
+    const older = weakSort(words.filter(w => w.week !== lw.label));
+    if (!len) return shuffle([...fresh, ...older]);
+    const nNew = Math.min(fresh.length, older.length ? Math.ceil(len * 0.6) : len);
+    const pick = [...shuffle(fresh).slice(0, nNew), ...older.slice(0, len - nNew)];
+    if (pick.length < len) pick.push(...shuffle(fresh).slice(nNew, nNew + len - pick.length));
+    return shuffle(pick);
+  }
+  const pool = poolFor(settings.src);
+  return shuffle(len ? weakSort(pool).slice(0, len) : pool);
+}
+const sideFor = () => settings.dir === "mixed" ? (Math.random() < .5 ? "ko" : "en") : settings.dir;
+
+/* ---------- Round state ---------- */
+let R = null;
+function startRound(deckOverride) {
+  if (!words.length) return;
+  const deck = deckOverride || buildDeck();
+  if (!deck.length) { toast("No words in that selection yet"); return; }
+  R = { game: settings.game, deck: deck.map(w => ({ w, side: sideFor() })), i: 0, total: deck.length, right: 0, wrong: 0, combo: 0, best: 0, xp: 0, missed: new Map(), firstTry: new Set(), answered: 0, timeLeft: 60, timerId: null, locked: false };
+  if (R.game === "speed") {
+    R.deck = shuffle(poolFor(settings.src === "mix" ? "all" : settings.src)).map(w => ({ w, side: sideFor() }));
+    R.timerId = setInterval(tick, 1000);
+  }
+  $("#timer").hidden = R.game !== "speed";
+  $("#progText").hidden = R.game === "speed";
+  show("play"); updateHud(); renderCard();
+}
+$("#startBtn").addEventListener("click", () => startRound());
+$("#quitBtn").addEventListener("click", () => finish(true));
+
+function tick() {
+  R.timeLeft--; $("#timer").textContent = R.timeLeft; $("#timer").classList.toggle("low", R.timeLeft <= 10);
+  $("#progBar").style.width = ((60 - R.timeLeft) / 60 * 100) + "%";
+  if (R.timeLeft <= 0) finish();
+}
+function updateHud() {
+  $("#comboN").textContent = R.combo;
+  if (R.game === "speed") { $("#timer").textContent = R.timeLeft; $("#timer").classList.toggle("low", R.timeLeft <= 10); $("#progBar").style.width = ((60 - R.timeLeft) / 60 * 100) + "%"; }
+  else { $("#progText").textContent = `${Math.min(R.answered, R.total)}/${R.total}`; $("#progBar").style.width = (R.answered / R.total * 100) + "%"; }
+}
+function bumpCombo() { const c = $("#combo"); c.classList.remove("bump"); void c.offsetWidth; c.classList.add("bump"); setTimeout(() => c.classList.remove("bump"), 200); }
+function floatXP(n) { const d = document.createElement("div"); d.className = "float-xp"; d.textContent = "+" + n; document.body.appendChild(d); setTimeout(() => d.remove(), 900); }
+
+function grade(item, correct, firstAttempt = true) {
+  const s = st(item.w.id); s.seen++; s.last = Date.now();
+  if (correct) {
+    s.right++; s.box = Math.min(5, s.box + (firstAttempt ? 1 : 0));
+    R.combo++; R.best = Math.max(R.best, R.combo); R.right++;
+    const mult = 1 + Math.min(3, Math.floor(R.combo / 3));
+    const gain = (R.game === "flip" ? 5 : 10) * mult;
+    R.xp += gain; floatXP(gain); bumpCombo();
+  } else {
+    s.box = Math.max(0, s.box - 1); R.combo = 0; R.wrong++;
+    R.missed.set(item.w.id, item.w);
+  }
+  updateHud();
+}
+
+/* ---------- Speech ---------- */
+let koVoice = null;
+function pickVoice() { try { koVoice = speechSynthesis.getVoices().find(v => /^ko/i.test(v.lang)) || null; } catch {} }
+if ("speechSynthesis" in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function speak(text) {
+  if (!("speechSynthesis" in window)) return;
+  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = "ko-KR"; if (koVoice) u.voice = koVoice; u.rate = .9; speechSynthesis.speak(u); } catch {}
+}
+const speakBtn = ko => `<button class="speak" data-say="${esc(ko)}" aria-label="Hear ${esc(ko)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>Listen</button>`;
+document.addEventListener("click", e => { const b = e.target.closest("[data-say]"); if (b) { e.stopPropagation(); speak(b.dataset.say); } }, true);
+
+const isNew = w => latestWeek() && w.week === latestWeek().label && settings.src !== "latest";
+const wordHTML = (w, side) => side === "ko"
+  ? `<p class="word" lang="ko">${esc(w.ko)}</p>`
+  : `<p class="word en">${esc(w.en)}</p>`;
+
+/* ---------- Render a card ---------- */
+function renderCard() {
+  if (R.game !== "speed" && R.i >= R.deck.length) return finish();
+  if (R.game === "speed" && R.i >= R.deck.length) R.deck.push(...shuffle(R.deck.slice(0, R.deck.length)).map(x => ({ w: x.w, side: sideFor() })));
+  const item = R.deck[R.i]; R.locked = false;
+  if (R.game === "flip") renderFlip(item); else renderQuiz(item);
+}
+
+function renderFlip(item) {
+  const { w, side } = item;
+  const back = side === "ko" ? "en" : "ko";
+  $("#playArea").innerHTML = `
+    <div class="stage">
+      <div class="card" id="card" tabindex="0" aria-label="Flashcard. Press space to flip.">
+        <span class="swipe-badge yes" id="bYes">GOT IT</span><span class="swipe-badge no" id="bNo">AGAIN</span>
+        <div class="face front">
+          <span class="tag">${esc(w.week)}</span>${isNew(w) ? '<span class="new">NEW</span>' : ""}
+          ${wordHTML(w, side)}
+          ${side === "ko" && settings.tts ? speakBtn(w.ko) : ""}
+          <span class="hint">Tap to flip · Space</span>
+        </div>
+        <div class="face back">
+          <span class="tag">${side === "ko" ? "Meaning" : "Korean"}</span>
+          ${wordHTML(w, back)}
+          ${w.rom ? `<span class="rom">${esc(w.rom)}</span>` : ""}
+          ${side === "en" ? `<span class="rom" style="font-size:13px">${esc(w.en)}</span>` : `<span class="rom" lang="ko" style="font-family:var(--font-word);font-size:18px;color:var(--ink-2)">${esc(w.ko)}</span>`}
+          ${w.notes ? `<span class="note">${esc(w.notes)}</span>` : ""}
+          ${settings.tts ? speakBtn(w.ko) : ""}
+          <span class="hint">Swipe right if you knew it · left to see again</span>
+        </div>
+      </div>
+    </div>
+    <div class="actions" id="flipActions">
+      <button class="act flip" id="flipBtn">Show answer<small>Space</small></button>
+    </div>`;
+  const card = $("#card");
+  const flip = () => {
+    if (card.classList.contains("flipped")) return;
+    card.classList.add("flipped");
+    if (settings.tts && side === "en") speak(w.ko);
+    $("#flipActions").innerHTML = `<button class="act no" id="againBtn">Again<small>← or 1</small></button><button class="act yes" id="gotBtn">Got it<small>→ or 2</small></button>`;
+    $("#againBtn").onclick = () => answerFlip(false);
+    $("#gotBtn").onclick = () => answerFlip(true);
+  };
+  card.addEventListener("click", e => { if (!drag.moved) flip(); });
+  $("#flipBtn").onclick = flip;
+  attachSwipe(card, flip);
+  if (settings.tts && side === "ko") speak(w.ko);
+  card.focus({ preventScroll: true });
+}
+function answerFlip(knew) {
+  if (R.locked) return; R.locked = true;
+  const item = R.deck[R.i];
+  const first = !R.firstTry.has(item.w.id);
+  R.firstTry.add(item.w.id);
+  grade(item, knew, first);
+  if (knew) R.answered++;
+  else {
+    // see it again a few cards later; doesn't count as answered yet
+    const pos = Math.min(R.deck.length, R.i + 1 + 3);
+    R.deck.splice(pos, 0, { w: item.w, side: item.side });
+  }
+  const card = $("#card");
+  card.classList.add("drag");
+  card.style.transition = "transform .3s ease-in, opacity .3s";
+  card.style.transform = `translateX(${knew ? 120 : -120}%) rotate(${knew ? 14 : -14}deg) ${card.classList.contains("flipped") ? "rotateY(180deg)" : ""}`;
+  card.style.opacity = "0";
+  updateHud();
+  setTimeout(() => { R.i++; renderCard(); }, 260);
+}
+
+/* swipe for flip cards */
+const drag = { moved: false };
+function attachSwipe(card, flip) {
+  let sx = 0, sy = 0, dx = 0, active = false, id = null;
+  card.addEventListener("pointerdown", e => { active = true; drag.moved = false; sx = e.clientX; sy = e.clientY; dx = 0; id = e.pointerId; });
+  card.addEventListener("pointermove", e => {
+    if (!active || e.pointerId !== id) return;
+    dx = e.clientX - sx; const dy = e.clientY - sy;
+    if (!drag.moved && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) { drag.moved = true; card.setPointerCapture?.(id); }
+    if (!drag.moved) return;
+    if (!card.classList.contains("flipped")) { return; }
+    card.classList.add("drag");
+    card.style.transform = `translateX(${dx}px) rotate(${dx / 18}deg) rotateY(180deg)`;
+    $("#bYes").style.opacity = Math.max(0, Math.min(1, dx / 90));
+    $("#bNo").style.opacity = Math.max(0, Math.min(1, -dx / 90));
+  });
+  const end = () => {
+    if (!active) return; active = false;
+    if (drag.moved && !card.classList.contains("flipped")) { flip(); setTimeout(() => drag.moved = false, 0); return; }
+    if (drag.moved && Math.abs(dx) > 90) { answerFlip(dx > 0); }
+    else if (drag.moved) { card.classList.remove("drag"); card.style.transform = ""; $("#bYes").style.opacity = 0; $("#bNo").style.opacity = 0; }
+    setTimeout(() => drag.moved = false, 0);
+  };
+  card.addEventListener("pointerup", end); card.addEventListener("pointercancel", end);
+}
+
+/* ---------- Quiz / Speed ---------- */
+function distractors(w, side, n) {
+  const key = side === "ko" ? "en" : "ko";
+  const used = new Set([w[key]]);
+  const sameWeek = shuffle(words.filter(x => x.week === w.week && x.id !== w.id));
+  const rest = shuffle(words.filter(x => x.week !== w.week));
+  const out = [];
+  for (const x of [...sameWeek, ...rest]) { if (out.length >= n) break; if (!used.has(x[key])) { used.add(x[key]); out.push(x); } }
+  return out;
+}
+function renderQuiz(item) {
+  const { w, side } = item;
+  const ansKey = side === "ko" ? "en" : "ko";
+  const opts = shuffle([w, ...distractors(w, side, 3)]);
+  item.opts = opts;
+  $("#playArea").innerHTML = `
+    <div class="prompt" id="prompt">
+      <span class="tag" style="position:absolute;top:14px;left:16px;font-size:11px;letter-spacing:1.3px;text-transform:uppercase;font-weight:700;color:var(--ink-3)">${esc(w.week)}</span>
+      ${isNew(w) ? '<span class="new" style="position:absolute;top:12px;right:14px;font-size:11px;font-weight:700;color:var(--jade);background:var(--jade-soft);padding:3px 9px;border-radius:999px">NEW</span>' : ""}
+      ${wordHTML(w, side)}
+      ${side === "ko" && w.rom && R.game !== "speed" ? `<span class="rom" id="romHint" style="visibility:hidden">${esc(w.rom)}</span>` : ""}
+      ${side === "ko" && settings.tts ? speakBtn(w.ko) : ""}
+    </div>
+    <div class="options" id="opts">
+      ${opts.map((o, i) => `<button class="opt ${ansKey === "ko" ? "ko-opt" : ""}" data-i="${i}" ${ansKey === "ko" ? 'lang="ko"' : ""}><span class="k">${i + 1}</span><span>${esc(o[ansKey])}</span></button>`).join("")}
+    </div>
+    <div id="after"></div>`;
+  $("#opts").addEventListener("click", e => { const b = e.target.closest(".opt"); if (b) pick(+b.dataset.i); });
+  if (settings.tts && side === "ko" && R.game !== "speed") speak(w.ko);
+}
+function pick(i) {
+  if (R.locked) return; R.locked = true;
+  const item = R.deck[R.i]; const ok = item.opts[i].id === item.w.id;
+  const btns = $$("#opts .opt");
+  btns.forEach((b, j) => { b.disabled = true; if (item.opts[j].id === item.w.id) b.classList.add("right"); });
+  if (!ok) { btns[i].classList.add("wrong"); $("#prompt").classList.add("shake"); }
+  grade(item, ok); R.answered++; updateHud();
+  const rh = $("#romHint"); if (rh) rh.style.visibility = "visible";
+  if (R.game === "speed") { setTimeout(next, ok ? 250 : 800); return; }
+  if (ok) { if (settings.tts && item.side === "en") speak(item.w.ko); setTimeout(next, 750); }
+  else {
+    if (settings.tts) speak(item.w.ko);
+    $("#after").innerHTML = `${item.w.notes ? `<p class="note" style="text-align:center;margin:0 0 10px">${esc(item.w.ko)} · ${esc(item.w.notes)}</p>` : ""}<button class="next" id="nextBtn" style="width:100%">Next<span style="opacity:.6;font-weight:500"> · Enter</span></button>`;
+    $("#nextBtn").onclick = next; $("#nextBtn").focus({ preventScroll: true });
+  }
+}
+function next() { if (!R) return; R.i++; renderCard(); }
+
+/* keyboard */
+document.addEventListener("keydown", e => {
+  if (!R || $("#view-play").hidden || !$("#settings").hidden) return;
+  if (e.target.matches("input, select, textarea")) return;
+  if ((e.key === "Enter" || e.key === " ") && e.target.closest("button")) return;
+  if (R.game === "flip") {
+    const flipped = $("#card")?.classList.contains("flipped");
+    if (!flipped && (e.key === " " || e.key === "Enter")) { e.preventDefault(); $("#flipBtn")?.click(); }
+    else if (flipped && (e.key === "ArrowRight" || e.key === "2")) answerFlip(true);
+    else if (flipped && (e.key === "ArrowLeft" || e.key === "1")) answerFlip(false);
+  } else {
+    if (/^[1-4]$/.test(e.key) && !R.locked) pick(+e.key - 1);
+    else if (e.key === "Enter" && $("#nextBtn")) { e.preventDefault(); next(); }
+  }
+  if (e.key === "Escape") finish(true);
+});
+
+/* ---------- Finish ---------- */
+function finish(quit) {
+  if (!R) return;
+  clearInterval(R.timerId);
+  const r = R; R = null;
+  if (r.answered === 0 && quit) { renderHome(); show("home"); return; }
+  const tries = r.right + r.wrong;
+  const acc = tries ? Math.round(r.right / tries * 100) : 0;
+  let bonus = 0;
+  if (!quit && r.game !== "speed" && acc === 100 && r.total >= 5) bonus = 25;
+  profile.xp += r.xp + bonus;
+  let newBest = false;
+  if (r.game === "speed" && r.right > profile.bestSpeed) { profile.bestSpeed = r.right; newBest = true; }
+  bumpStreak(); persist();
+  const stars = r.game === "speed" ? (r.right >= 25 ? 3 : r.right >= 15 ? 2 : r.right >= 5 ? 1 : 0) : (acc >= 90 ? 3 : acc >= 70 ? 2 : acc >= 40 ? 1 : 0);
+  const head = r.game === "speed" ? (newBest ? "New best!" : `${r.right} correct`) : (["다시 해 봐요", "좋아요!", "잘했어요!", "완벽해요!"][stars]);
+  const sub = r.game === "speed" ? `${r.right} right in 60 seconds · best ${profile.bestSpeed}` : (quit ? "Round ended early" : ["Keep going — try again", "Good", "Well done", "Perfect"][stars]);
+  const missed = [...r.missed.values()];
+  const starSvg = on => `<svg class="${on ? "on" : ""}" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3 6.5 7 .8-5.2 4.8 1.4 7L12 17.6 5.8 21l1.4-7L2 9.3l7-.8z"/></svg>`;
+  $("#view-results").innerHTML = `
+    <div class="stars">${[0, 1, 2].map(i => starSvg(i < stars)).join("")}</div>
+    <div><h2 lang="ko">${esc(head)}</h2><p style="margin:4px 0 0;color:var(--ink-2)">${esc(sub)}</p></div>
+    <div class="statgrid">
+      <div class="stat"><b>+${r.xp + bonus}</b><span>XP${bonus ? " (+25 perfect)" : ""}</span></div>
+      <div class="stat"><b>${acc}%</b><span>Accuracy</span></div>
+      <div class="stat"><b>${r.best}</b><span>Best combo</span></div>
+    </div>
+    ${missed.length ? `<div class="missed"><h3>To review (${missed.length})</h3>${missed.map(w => `<div class="witem"><span class="k" lang="ko">${esc(w.ko)}${w.rom ? `<small>${esc(w.rom)}</small>` : ""}</span><span class="e">${esc(w.en)}</span><span class="right">${settings.tts ? `<button class="mini" data-say="${esc(w.ko)}" aria-label="Hear ${esc(w.ko)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg></button>` : ""}</span></div>`).join("")}</div>` : ""}
+    <div class="btnrow">
+      ${missed.length && r.game !== "speed" ? `<button class="start" id="practiceMissed">Practice missed <small>${missed.length} cards</small></button>` : ""}
+      <button class="${missed.length && r.game !== "speed" ? "ghost" : "start"}" id="again">Play again</button>
+      <button class="ghost" id="home">Back to menu</button>
+    </div>`;
+  show("results");
+  $("#again").onclick = () => startRound();
+  $("#home").onclick = () => { renderHome(); show("home"); };
+  const pm = $("#practiceMissed"); if (pm) pm.onclick = () => startRound(shuffle(missed));
+  if (stars === 3 || newBest) confetti();
+}
+
+/* ---------- Word list ---------- */
+function renderWords() {
+  const q = $("#search").value.trim().toLowerCase();
+  const groups = [...weeks].reverse().map(wk => {
+    const list = words.filter(w => w.week === wk.label && (!q || w.ko.includes(q) || w.en.toLowerCase().includes(q) || w.rom.toLowerCase().includes(q)));
+    if (!list.length) return "";
+    const m = list.filter(w => (stats[w.id]?.box || 0) >= MASTER).length;
+    return `<div class="wgroup"><h3><span>${esc(wk.label)}${wk === latestWeek() ? ' <span class="new" style="font-size:10px;color:var(--jade);background:var(--jade-soft);padding:2px 8px;border-radius:999px;vertical-align:2px">LATEST</span>' : ""}</span><small>${m}/${list.length} mastered</small></h3>
+      <div class="wlist">${list.map(w => { const b = stats[w.id]?.box || 0; return `<div class="witem">
+        <span class="k" lang="ko">${esc(w.ko)}${w.rom ? `<small>${esc(w.rom)}</small>` : ""}</span>
+        <span class="e">${esc(w.en)}${w.notes ? ` <span style="color:var(--ink-3)">· ${esc(w.notes)}</span>` : ""}</span>
+        <span class="right"><span class="mastery" title="Mastery ${Math.min(b, MASTER)}/${MASTER}">${[1, 2, 3, 4].map(i => `<i class="${b >= i ? "on" : ""}"></i>`).join("")}</span>
+        ${settings.tts ? `<button class="mini" data-say="${esc(w.ko)}" aria-label="Hear ${esc(w.ko)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg></button>` : ""}</span>
+      </div>`; }).join("")}</div></div>`;
+  }).join("");
+  $("#wordGroups").innerHTML = groups || `<div class="empty">${q ? "No words match that search." : "No words yet. Add rows to your sheet."}</div>`;
+}
+$("#search").addEventListener("input", renderWords);
+
+/* ---------- Settings ---------- */
+function openSettings() {
+  $("#sheetUrl").value = settings.sheet || DEFAULT_SHEET_URL;
+  $("#refreshSel").value = String(settings.refresh);
+  $("#ttsToggle").checked = !!settings.tts;
+  $("#sheetMsg").textContent = ""; $("#resetConfirm").hidden = true;
+  $("#settings").hidden = false; $("#sheetUrl").focus();
+}
+function closeSettings() { $("#settings").hidden = true; renderHome(); }
+$("#openSettings").onclick = openSettings;
+document.addEventListener("click", e => { if (e.target.closest("[data-open-settings]")) openSettings(); });
+$("#closeSettings").onclick = closeSettings;
+$("#settings").addEventListener("click", e => { if (e.target.id === "settings") closeSettings(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#settings").hidden) closeSettings(); });
+$("#saveSheet").onclick = async () => {
+  const v = $("#sheetUrl").value.trim();
+  const msg = $("#sheetMsg");
+  if (v && !/^https?:\/\//.test(v)) { msg.className = "msg err"; msg.textContent = "That doesn't look like a link. Paste the full address starting with https://"; return; }
+  settings.sheet = v; saveSettings(); words = [];
+  msg.className = "msg"; msg.textContent = "Syncing…";
+  const r = await sync();
+  if (!v) { msg.className = "msg ok"; msg.textContent = "Sheet removed. Using sample words."; }
+  else if (r && r.ok) { msg.className = "msg ok"; msg.textContent = `Connected. Found ${r.count} words in ${weeks.length} week${weeks.length > 1 ? "s" : ""}.`; }
+  else { msg.className = "msg err"; msg.textContent = `Couldn't load it: ${r ? r.why : "unknown error"}. Check that sharing is set to "Anyone with the link".`; }
+  scheduleSync();
+};
+$("#refreshSel").onchange = e => { settings.refresh = +e.target.value; saveSettings(); scheduleSync(); };
+$("#ttsToggle").onchange = e => { settings.tts = e.target.checked; saveSettings(); };
+$("#resetBtn").onclick = () => { $("#resetConfirm").hidden = false; };
+$("#resetNo").onclick = () => { $("#resetConfirm").hidden = true; };
+$("#resetYes").onclick = () => { stats = {}; profile = { xp: 0, streak: 0, lastDay: null, bestSpeed: 0 }; persist(); $("#resetConfirm").hidden = true; toast("Progress reset"); renderHome(); };
+
+/* ---------- Toast & confetti ---------- */
+let toastT;
+function toast(text) {
+  document.querySelector(".toast")?.remove(); clearTimeout(toastT);
+  const t = document.createElement("div"); t.className = "toast"; t.setAttribute("role", "status"); t.textContent = text;
+  document.body.appendChild(t); toastT = setTimeout(() => t.remove(), 3200);
+}
+function confetti() {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const c = $("#confetti"); c.hidden = false; const ctx = c.getContext("2d");
+  const W = c.width = innerWidth * devicePixelRatio, H = c.height = innerHeight * devicePixelRatio;
+  const css = getComputedStyle(document.documentElement);
+  const cols = ["--jade", "--gold", "--persimmon", "--indigo"].map(v => css.getPropertyValue(v).trim());
+  const ps = Array.from({ length: 140 }, () => ({ x: W / 2 + (Math.random() - .5) * W * .3, y: H * .35, vx: (Math.random() - .5) * 26, vy: -Math.random() * 26 - 8, s: (Math.random() * 6 + 5) * devicePixelRatio, r: Math.random() * 6, vr: (Math.random() - .5) * .4, c: cols[Math.floor(Math.random() * 4)] }));
+  let f = 0;
+  (function loop() {
+    ctx.clearRect(0, 0, W, H);
+    ps.forEach(p => { p.vy += .9; p.x += p.vx; p.y += p.vy; p.vx *= .98; p.r += p.vr; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); ctx.restore(); });
+    if (++f < 110) requestAnimationFrame(loop); else { ctx.clearRect(0, 0, W, H); c.hidden = true; }
+  })();
+}
+
+/* ---------- Boot ---------- */
+(function boot() {
+  const cache = store.get("cache", null);
+  if (activeSheet() && cache && cache.sheet === activeSheet()) { lastSync = cache.at; applyWords(toWords(cache.csv), "cache"); setSync("warn", `Showing words from ${agoText(cache.at)} · checking for updates…`); }
+  else renderHome();
+  sync(); scheduleSync();
+})();
+</script>
+</body>
+</html>
